@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# Environments and Secrets
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.idea/
+.vscode/
+
+# Docker
+Dockerfile
+docker-compose.yaml
+.dockerignore
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# uv cache
+.uv
