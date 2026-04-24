@@ -1,102 +1,71 @@
 import asyncio
-import logging
-import os
-from aiogram.types import FSInputFile
+from loguru import logger
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
-from colorama import Fore, Style
-from create_obj import bot
+from aiogram import Bot, Dispatcher
 from aiogram.methods import DeleteWebhook
+from aiogram.client.session.aiohttp import AiohttpSession
+from settings.settings import app_settings
+from routers.scan_folder import start_router
+import sys
 
+logger.remove()
 
-DEBUG = os.getenv('DEBUG')
-POLLING = os.getenv('POLLING')
-
-WEB_SERVER_HOST = os.getenv('WEB_SERVER_HOST')
-WEB_SERVER_PORT = os.getenv('WEB_SERVER_PORT')
-
-WEBHOOK_PATH = os.getenv('WEBHOOK_PATH')
-WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET')
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-WEBHOOK_PORT = os.getenv("WEBHOOK_PORT")
-WEBHOOK_SSL_CERT = os.getenv('WEBHOOK_SSL_CERT')
-WEBHOOK_SSL_PRIV = os.getenv('WEBHOOK_SSL_PRIV')
-
-logger = logging.getLogger(__name__)
-
-
-async def on_startup():
-    global kb_list
-
-    logger.info('Бот загрузился')
-    logger.info(
-        'Соединение с базой' + f"{Fore.GREEN}{Style.DIM}{str(db_test_connect)}" if
-        db_test_connect else  f"{Fore.RED}{Style.DIM}{str(db_test_connect)}" + Fore.RESET
-    )
-    logger.debug('Переменная DEBUG =' + str(DEBUG))
-
-    # dp.outer_middleware.setup(CheckUserMiddleware())
-    if DEBUG == "False":
-        logger.info('Webhook mode start set.webhook')
-        logger.info(f'Set webhook: {WEBHOOK_URL}:{WEBHOOK_PORT}{WEBHOOK_PATH}')
-        await bot.set_webhook(f"{WEBHOOK_URL}:{WEBHOOK_PORT}{WEBHOOK_PATH}",
-                              secret_token=WEBHOOK_SECRET,
-                              drop_pending_updates=True,
-                              )
-
-
-
-async def on_shutdown():
-    logging.info('Shutting down..')
-    # insert code here to run it before shutdown
-    # Remove webhook (not acceptable in some cases)
-    await bot.delete_webhook()
-    # Close DB connection (if used)
-    await dp.storage.close()
-    await dp.storage.wait_closed()
-    logging.info('Bye!')
-
-
-from handlers import cliet_part, admin, other, inline_mode, tmp
-
-cliet_part.register_handlers_client(dp)
-
-admin.register_handlers_admin(dp)
-
-inline_mode.register_handlers_inline(dp)
-
-# для записи сообщений которые не ловятся хенжлерами
-# пустой хендлер должен быть последним
-other.register_handlers_other(dp)
-
-#tmp.register_tmp_handlers(dp)
+# Добавляем свой обработчик с нужным уровнем логирования
+logger.add(
+    sys.stderr,  # Вывод в stderr
+    level=app_settings.log_level,  # Уровень логирования
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+)
 
 
 async def main():
 
-    if POLLING:
-        logging.basicConfig(level=logging.DEBUG)
-        logging.warning('Режим pollong')
+    if app_settings.use_proxy:
+        session = AiohttpSession(proxy=app_settings.proxy_url)
+        bot = Bot(token=app_settings.bot_token, session=session)
+        logger.info(f"Using proxy: {app_settings.proxy_url} ")
+    else:
+        bot = Bot(token=app_settings.bot_token)
+        logger.info("Not using proxy")
+
+    # Dispatch handlers
+    dp = Dispatcher()
+
+    dp.include_router(start_router)
+
+    async def on_startup():
+
+        logger.info("Бот загрузился")
+        # logger.info(
+        #     'Соединение с базой' + f"{Fore.GREEN}{Style.DIM}{str(db_test_connect)}" if
+        #     db_test_connect else f"{Fore.RED}{Style.DIM}{str(db_test_connect)}" + Fore.RESET
+        # )
+
+    async def on_shutdown():
+        logger.info("Выключение бота...")
+        # insert code here to run it before shutdown
+        # Remove webhook (not acceptable in some cases)
+        if not app_settings.is_polling:
+            await bot.delete_webhook()
+        # Close DB connection (if used)
+        await dp.storage.close()
+        await dp.storage.wait_closed()
+        logger.info("Бай!")
+
+    if app_settings.is_polling:
+        logger.info("Режим pollong")
         await bot(DeleteWebhook(drop_pending_updates=True))
         await dp.start_polling(
-            bot,
-            skip_updates=True,
-            on_startup=on_startup,
-            on_shutdown=on_shutdown
+            bot, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown
         )
     else:
-        logging.basicConfig(level=logging.INFO)
-        logging.warning('Режим webhook')
-
+        logger.warning("Режим webhook")
         dp.startup.register(on_startup)
         dp.shutdown.register(on_shutdown)
-
         app = web.Application()
-
         webhook_requests_handler = SimpleRequestHandler(
-            dispatcher=dp,
-            bot=bot,
-            secret_token=WEBHOOK_SECRET
+            dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET
         )
         webhook_requests_handler.register(app, path=WEBHOOK_PATH)
         setup_application(app, dp, bot=bot)
@@ -108,5 +77,6 @@ async def main():
             print(f" port{WEB_SERVER_PORT}")
             print(f" path={WEBHOOK_PATH}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     asyncio.run(main())
