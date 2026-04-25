@@ -16,8 +16,8 @@ async def scan_folder_cache(folder: Path = app_settings.target_folder) -> list:
     Files_tuple = namedtuple("Files_tuple", ["name", "path", "id"])
 
     return [
-        Files_tuple(f.name, f.absolute(), str(uuid4())[:8]) for f in
-        folder.rglob("*.xlsx")
+        Files_tuple(f.name, f.absolute(), str(uuid4())[:8])
+        for f in folder.rglob("*.xlsx")
     ]
 
 

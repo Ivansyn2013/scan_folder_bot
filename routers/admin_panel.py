@@ -14,16 +14,16 @@ from aiogram import Bot
 admin_router = Router(name="admin_router")
 
 
-
-@admin_router.message(Command('admin'))
-async def admin(message: Message,
+@admin_router.message(Command("admin"))
+async def admin(
+    message: Message,
     db_session: Session,
     bot: Bot,
     user_repo: UserRepository,
     request_repo: UserRequestRepository,
     file_cache: FilesCache,
-    user_cache: UserCache,):
-
+    user_cache: UserCache,
+):
     """Обработчик команды /admin"""
     user_id = message.from_user.id
     user = await user_repo.get_user_by_id(user_id=user_id)
@@ -34,8 +34,10 @@ async def admin(message: Message,
             f"О Ваших действия будет доложено администратору"
         )
         admins = await user_repo.get_admins()
-        await bot.send_message(user_id=admins[0].telegram_id,
-                               text=f"Пользователь {message.from_user.first_name} {message.from_user.last_name} ({message.from_user.username}) не зарегистрирован в системе")
+        await bot.send_message(
+            user_id=admins[0].telegram_id,
+            text=f"Пользователь {message.from_user.first_name} {message.from_user.last_name} ({message.from_user.username}) не зарегистрирован в системе",
+        )
         return
 
     await message.answer(

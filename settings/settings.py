@@ -51,8 +51,12 @@ class AppSettings(BaseModel):
         raw_roles = os.getenv("ROLES")
         data.setdefault("user_roles", raw_roles.split(",") if raw_roles else None)
         data.setdefault("proxy_url", os.getenv("PROXY_URL"))
-        data.setdefault("use_proxy", os.getenv("USE_PROXY", "").lower() in ("1", "true", "yes"))
-        data.setdefault("is_polling", os.getenv("POLLING", "").lower() in ("1", "true", "yes"))
+        data.setdefault(
+            "use_proxy", os.getenv("USE_PROXY", "").lower() in ("1", "true", "yes")
+        )
+        data.setdefault(
+            "is_polling", os.getenv("POLLING", "").lower() in ("1", "true", "yes")
+        )
         data.setdefault("database_url", os.getenv("DATABASE_URL"))
         debug = data.get("debug", False)
         data.setdefault("log_level", "DEBUG" if debug else "INFO")

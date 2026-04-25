@@ -6,6 +6,7 @@ from typing import Optional, List, Any, NamedTuple
 from models.repositories import UserRepository
 from models.sessions import db_manager as db
 
+
 class BaseCache:
     _instance: Optional["BaseCache"] = None
     _initialized = False
