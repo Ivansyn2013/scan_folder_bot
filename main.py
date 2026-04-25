@@ -5,13 +5,17 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.methods import DeleteWebhook
 from aiogram.client.session.aiohttp import AiohttpSession
+
+from models.repositories import UserRepository
+from models.users import CustomUser
 from settings.settings import app_settings
 from routers.scan_folder import start_router
 import sys
 from middleware.db_middleware import DatabaseMiddleware
+from caches import user_cache, file_cache
+from models.users import UserRole
 
 logger.remove()
-
 # Добавляем свой обработчик с нужным уровнем логирования
 logger.add(
     sys.stderr,  # Вывод в stderr
@@ -39,6 +43,21 @@ async def main():
     async def on_startup():
 
         logger.info("Бот загрузился")
+        file_cache.initialize()
+        user_cache.initialize()
+        logger.info(f"Loaded caches {file_cache}\n User cache {user_cache}")
+
+        admin = UserRepository.get_by_telegram_id(app_settings.admin_id)
+        if not admin:
+            logger.info("Admin user not found")
+            admin = CustomUser(
+                name="admin",
+                role_group=UserRole.ADMIN,
+                telegram_id=app_settings.admin_id,
+            )
+            UserRepository.add(admin)
+            logger.info("Admin user created successfully")
+
         # logger.info(
         #     'Соединение с базой' + f"{Fore.GREEN}{Style.DIM}{str(db_test_connect)}" if
         #     db_test_connect else f"{Fore.RED}{Style.DIM}{str(db_test_connect)}" + Fore.RESET
@@ -61,23 +80,23 @@ async def main():
         await dp.start_polling(
             bot, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown
         )
-    else:
-        logger.warning("Режим webhook")
-        dp.startup.register(on_startup)
-        dp.shutdown.register(on_shutdown)
-        app = web.Application()
-        webhook_requests_handler = SimpleRequestHandler(
-            dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET
-        )
-        webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-        setup_application(app, dp, bot=bot)
-        try:
-            web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
-        except Exception as e:
-            print(e)
-            print(f" host={WEB_SERVER_HOST}")
-            print(f" port{WEB_SERVER_PORT}")
-            print(f" path={WEBHOOK_PATH}")
+    # else:
+    #     logger.warning("Режим webhook")
+    #     dp.startup.register(on_startup)
+    #     dp.shutdown.register(on_shutdown)
+    #     app = web.Application()
+    #     webhook_requests_handler = SimpleRequestHandler(
+    #         dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET
+    #     )
+    #     webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+    #     setup_application(app, dp, bot=bot)
+    #     try:
+    #         web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+    #     except Exception as e:
+    #         print(e)
+    #         print(f" host={WEB_SERVER_HOST}")
+    #         print(f" port{WEB_SERVER_PORT}")
+    #         print(f" path={WEBHOOK_PATH}")
 
 
 if __name__ == "__main__":

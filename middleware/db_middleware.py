@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from models.sessions import db_manager
 from models.repositories import UserRepository, UserRequestRepository
+from caches import user_cache, file_cache
 
 
 class DatabaseMiddleware(BaseMiddleware):
@@ -25,6 +26,8 @@ class DatabaseMiddleware(BaseMiddleware):
             data["db_session"] = session
             data["user_repo"] = UserRepository(session)
             data["request_repo"] = UserRequestRepository(session)
+            data["file_cache"] = file_cache
+            data["user_cache"] = user_cache
 
             # Выполняем хендлер
             result = await handler(event, data)

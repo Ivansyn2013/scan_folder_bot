@@ -23,7 +23,7 @@ class AppSettings(BaseModel):
 
     app_name: str = Field(default="Scaner folder bot", max_length=100)
     debug: bool = os.getenv("DEBUG")
-    log_level: str = debug
+    log_level: str = "DEBUG" if debug else "INFO"
     api_version: str = Field(default="v1")
     allowed_hosts: List[str] = ["localhost", "127.0.0.1"]
     environment: str = Field(default="development")

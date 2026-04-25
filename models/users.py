@@ -7,12 +7,35 @@ from sqlalchemy import (
     DateTime,
     BigInteger,
     ForeignKey,
+    Enum as SqlEnum,
 )
 from sqlalchemy.orm import declarative_base
 from datetime import datetime
 import pytz
+from enum import Enum
 
 Base = declarative_base()
+
+
+class UserRole(str, Enum):
+    """Роли пользователей"""
+
+    NOT_REGISTER = "NOT_REGISTER"
+    GENERAL = "general"
+    STAFF = "staff"
+    ADMIN = "admin"
+    # MODERATOR = "moderator"
+    # VIP = "vip"
+
+    @classmethod
+    def list_roles(cls):
+        """Получить список всех ролей"""
+        return [role.value for role in cls]
+
+    @classmethod
+    def is_valid(cls, role: str) -> bool:
+        """Проверить, существует ли роль"""
+        return role in cls.list_roles()
 
 
 class CustomUser(Base):
@@ -24,7 +47,20 @@ class CustomUser(Base):
     )  # BigInteger для TG ID
     name = Column(String(255), nullable=True)  # Увеличил длину
     admin = Column(Boolean, default=False, nullable=False)
-    role_group = Column(String(50), nullable=True)  # Enum как строка для гибкости
+    role_group = Column(
+        SqlEnum(
+            UserRole,
+            values_callable=lambda obj: [
+                e.value for e in obj
+            ],  # Явно указываем значения
+            name="user_role_enum",  # Имя enum в БД (опционально)
+            native_enum=False,
+            # create_type=True
+        ),  # Создавать тип в БД (для PostgreSQL)
+        nullable=True,
+        default=UserRole.NOT_REGISTER,
+    )
+
     created_at = Column(
         DateTime, default=datetime.now(pytz.timezone("Europe/Moscow")), nullable=False
     )

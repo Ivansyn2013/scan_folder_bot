@@ -1,6 +1,23 @@
 from settings.settings import app_settings
 from pathlib import Path
 from loguru import logger
+from collections import namedtuple
+from uuid import uuid4
+
+
+async def scan_folder_cache(folder: Path = app_settings.target_folder) -> list:
+    """
+    Scan folder and get list for working like cache
+    :param folder:
+    :return:
+    """
+    if not folder.exists():
+        logger.error("Target folder not found")
+    Files_tuple = namedtuple("Files_tuple", ["file_name", "file_path", "file_id"])
+
+    return [
+        Files_tuple(f.name, f.path, str(uuid4())[:8]) for f in folder.rglob("*.xlsx")
+    ]
 
 
 async def scan_folder(target: str, folder: Path = app_settings.target_folder) -> list:

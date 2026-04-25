@@ -4,6 +4,8 @@ from sqlalchemy import select, update, delete
 from typing import Optional, List, Dict, Any
 from abc import ABC, abstractmethod
 from models.users import CustomUser, UserRequest
+from loguru import logger
+from models.users import UserRole
 
 
 class AbstractRepository(ABC):
@@ -51,7 +53,10 @@ class BaseRepository(AbstractRepository):
         return self.session.get(self.model, id)
 
     def get_all(self, skip: int = 0, limit: int = 100) -> List[Any]:
-        stmt = select(self.model).offset(skip).limit(limit)
+        stmt = select(self.model).offset(skip).limit(limit + 1)
+        result = list(self.session.execute(stmt).scalars().all())
+        if len(result) > limit:
+            logger.error(f"Instanses are more that limin <{limit}>")
         return list(self.session.execute(stmt).scalars().all())
 
     def update(self, id: int, data: Dict[str, Any]) -> Optional[Any]:
@@ -97,6 +102,14 @@ class UserRepository(BaseRepository):
             self.session.flush()
 
         return user
+
+    def get_staff(self) -> List[CustomUser]:
+        stmt = select(self.model).where(self.model.role_group == UserRole.STAFF)
+        return list(self.session.execute(stmt).scalars().all())
+
+    def get_not_register(self) -> List[CustomUser]:
+        stmt = select(self.model).where(self.model.role_group == UserRole.NOT_REGISTER)
+        return list(self.session.execute(stmt).scalars().all())
 
 
 class UserRequestRepository(BaseRepository):
