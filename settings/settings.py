@@ -35,6 +35,8 @@ class AppSettings(BaseModel):
     proxy_url: str = os.getenv("PROXY_URL")
     use_proxy: bool = os.getenv("USE_PROXY")
     is_polling: bool = os.getenv("POLLING")
+    database_url: str = os.getenv("DATABASE_URL")
+    base_dir: Path = Path.cwd().parent
 
     # Вложенные настройки
     # database: DatabaseSettings
@@ -66,6 +68,7 @@ class AppSettings(BaseModel):
 
 app_settings = AppSettings()
 logger.debug(f"App settings {app_settings}")
+
 # Пример использования
 if __name__ == "__main__":
     # Создание настроек из словаря

@@ -8,6 +8,7 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from settings.settings import app_settings
 from routers.scan_folder import start_router
 import sys
+from middleware.db_middleware import DatabaseMiddleware
 
 logger.remove()
 
@@ -33,6 +34,7 @@ async def main():
     dp = Dispatcher()
 
     dp.include_router(start_router)
+    dp.update.middleware(DatabaseMiddleware())
 
     async def on_startup():
 
