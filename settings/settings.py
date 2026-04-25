@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, ValidationError
-from typing import List, Dict, Union
+from typing import List, Dict, Optional, Union
 import os
 from pathlib import Path
 from loguru import logger
@@ -22,27 +22,41 @@ class AppSettings(BaseModel):
     """Главные настройки приложения"""
 
     app_name: str = Field(default="Scaner folder bot", max_length=100)
-    debug: bool = os.getenv("DEBUG")
-    log_level: str = "DEBUG" if debug else "INFO"
+    debug: bool = Field(default=False)
+    log_level: str = Field(default="INFO")
     api_version: str = Field(default="v1")
     allowed_hosts: List[str] = ["localhost", "127.0.0.1"]
     environment: str = Field(default="development")
-    bot_token: str = os.getenv("TOKEN")
-    admin_pass: str = os.getenv("ADMIN_PASS")
-    admin_id: str = os.getenv("ADMIN_ID")
-    target_folder: Path = Path(os.getenv("TARGET_FOLDER"))
-    user_roles: List[str] = os.getenv("ROLES")
-    proxy_url: str = os.getenv("PROXY_URL")
-    use_proxy: bool = os.getenv("USE_PROXY")
-    is_polling: bool = os.getenv("POLLING")
-    database_url: str = os.getenv("DATABASE_URL")
-    base_dir: Path = Path.cwd().parent
-
-    # Вложенные настройки
-    # database: DatabaseSettings
+    bot_token: Optional[str] = Field(default=None)
+    admin_pass: Optional[str] = Field(default=None)
+    admin_id: Optional[str] = Field(default=None)
+    target_folder: Optional[Path] = Field(default=None)
+    user_roles: Optional[List[str]] = Field(default=None)
+    proxy_url: Optional[str] = Field(default=None)
+    use_proxy: bool = Field(default=False)
+    is_polling: bool = Field(default=False)
+    database_url: Optional[str] = Field(default=None)
+    base_dir: Path = Field(default_factory=lambda: Path.cwd().parent)
 
     # Дополнительные параметры
     extra_config: Dict[str, Union[str, int, float, bool]] = Field(default_factory=dict)
+
+    def __init__(self, **data):
+        data.setdefault("debug", os.getenv("DEBUG", "").lower() in ("1", "true", "yes"))
+        data.setdefault("bot_token", os.getenv("TOKEN"))
+        data.setdefault("admin_pass", os.getenv("ADMIN_PASS"))
+        data.setdefault("admin_id", os.getenv("ADMIN_ID"))
+        raw_folder = os.getenv("TARGET_FOLDER")
+        data.setdefault("target_folder", Path(raw_folder) if raw_folder else None)
+        raw_roles = os.getenv("ROLES")
+        data.setdefault("user_roles", raw_roles.split(",") if raw_roles else None)
+        data.setdefault("proxy_url", os.getenv("PROXY_URL"))
+        data.setdefault("use_proxy", os.getenv("USE_PROXY", "").lower() in ("1", "true", "yes"))
+        data.setdefault("is_polling", os.getenv("POLLING", "").lower() in ("1", "true", "yes"))
+        data.setdefault("database_url", os.getenv("DATABASE_URL"))
+        debug = data.get("debug", False)
+        data.setdefault("log_level", "DEBUG" if debug else "INFO")
+        super().__init__(**data)
 
     @validator("debug")
     def validate_debug_environment(cls, v, values):
@@ -60,10 +74,9 @@ class AppSettings(BaseModel):
 
     class Config:
         title = "Application Configuration"
-        # Дополнительные настройки Pydantic
-        use_enum_values = True  # Использовать значения enum вместо объектов
-        validate_assignment = True  # Валидировать при присваивании
-        extra = "forbid"  # Запретить дополнительные поля
+        use_enum_values = True
+        validate_assignment = True
+        extra = "forbid"
 
 
 app_settings = AppSettings()
@@ -118,20 +131,3 @@ if __name__ == "__main__":
 
     except ValidationError as e:
         print(f"Ошибка валидации: {e}")
-
-    # Пример загрузки из JSON файла
-    # import json
-    # with open('config.json', 'r') as f:
-    #     config_json = json.load(f)
-    #     settings = AppSettings(**config_json)
-
-    # Пример загрузки из переменных окружения
-    # from pydantic import BaseSettings
-    #
-    # class EnvSettings(BaseSettings):
-    #     database_url: str
-    #     secret_key: str
-    #
-    #     class Config:
-    #         env_file = ".env"
-    #         env_file_encoding = "utf-8"

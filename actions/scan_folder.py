@@ -13,10 +13,11 @@ async def scan_folder_cache(folder: Path = app_settings.target_folder) -> list:
     """
     if not folder.exists():
         logger.error("Target folder not found")
-    Files_tuple = namedtuple("Files_tuple", ["file_name", "file_path", "file_id"])
+    Files_tuple = namedtuple("Files_tuple", ["name", "path", "id"])
 
     return [
-        Files_tuple(f.name, f.path, str(uuid4())[:8]) for f in folder.rglob("*.xlsx")
+        Files_tuple(f.name, f.absolute(), str(uuid4())[:8]) for f in
+        folder.rglob("*.xlsx")
     ]
 
 

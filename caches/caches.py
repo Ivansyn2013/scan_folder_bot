@@ -4,7 +4,7 @@ import pytz
 from loguru import logger
 from typing import Optional, List, Any, NamedTuple
 from models.repositories import UserRepository
-
+from models.sessions import db_manager as db
 
 class BaseCache:
     _instance: Optional["BaseCache"] = None
@@ -22,11 +22,11 @@ class BaseCache:
             self.cache: Optional[List[Any]] = []
             self.last_update: Optional[datetime] = None
             self._initialized = True
-            logger.info("FilesCache singleton created")
+            logger.info(f"Cache {self} singleton created")
 
     async def initialize(self):
         """Асинхронная инициализация (вызовите при старте бота)"""
-        if self.cache is None:
+        if self.cache == []:
             await self.update()
             logger.info("Cache initialized")
         return self
@@ -42,8 +42,11 @@ class UserCache(BaseCache):
     """
 
     async def update(self):
-        self.cache = UserRepository.get_staff()
-        self.cache.append(UserRepository.get_admins())
+        session = db.get_session()
+        user_repo = UserRepository(session)
+
+        self.cache = user_repo.get_staff()
+        self.cache.append(user_repo.get_admins())
         self.last_update = datetime.now(pytz.timezone("Europe/Moscow"))
         return self.cache
 

@@ -1,15 +1,22 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from pathlib import Path
 from typing import List
-
+from caches.caches import FilesCache
+from loguru import logger
 
 async def found_files_kb(
-    message, files: List[Path], page: int = 0, items_per_page: int = 5
+        message,
+        file_cache: FilesCache,
+        target:str,
+        page: int = 0,
+        items_per_page: int = 5
 ):
-    if not files:
+    if not file_cache.cache:
         await message.answer("❌ Файлы не найдены")
         return
 
+    files = [f for f in file_cache.cache if target.lower() in f.name.lower()]
+    logger.debug(f"Target is '{target}' Found files {files} in all files {len(file_cache.cache)}")
         # Расчет пагинации
     total_pages = (len(files) + items_per_page - 1) // items_per_page
     start_idx = page * items_per_page
@@ -19,10 +26,10 @@ async def found_files_kb(
     builder = InlineKeyboardBuilder()
 
     # Добавляем кнопки с файлами
-    for file_path in current_files:
+    for _file in current_files:
         builder.button(
-            text=f"📄 {file_path.name[:50]}",
-            callback_data=f"file_{file_path.as_posix()[:3]}",
+            text=f"📄 {_file.name[:50]}",
+            callback_data=f"{_file.id}",
         )
 
     # Добавляем кнопки навигации

@@ -130,3 +130,5 @@ class UserRequestRepository(BaseRepository):
     def create_request(self, telegram_id: int, text: str) -> UserRequest:
         request = self.model(user_id=telegram_id, text=text)
         return self.add(request)
+
+

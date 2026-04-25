@@ -41,22 +41,34 @@ async def main():
     dp.update.middleware(DatabaseMiddleware())
 
     async def on_startup():
+        from models.sessions import db_manager
 
         logger.info("Бот загрузился")
-        file_cache.initialize()
-        user_cache.initialize()
-        logger.info(f"Loaded caches {file_cache}\n User cache {user_cache}")
+        await file_cache.initialize()
+        await user_cache.initialize()
+        logger.info(f"Loaded caches {file_cache}")
+        logger.info(f"Loaded User cache {user_cache}")
 
-        admin = UserRepository.get_by_telegram_id(app_settings.admin_id)
-        if not admin:
-            logger.info("Admin user not found")
-            admin = CustomUser(
-                name="admin",
-                role_group=UserRole.ADMIN,
-                telegram_id=app_settings.admin_id,
-            )
-            UserRepository.add(admin)
-            logger.info("Admin user created successfully")
+        session = db_manager.get_session()
+        try:
+            user_repo = UserRepository(session)
+            admin = user_repo.get_by_telegram_id(app_settings.admin_id)
+            if not admin:
+                logger.info("Admin user not found")
+                admin = CustomUser(
+                    name="admin",
+                    admin=True,
+                    role_group=UserRole.ADMIN,
+                    telegram_id=app_settings.admin_id,
+                )
+                user_repo.add(admin)
+                session.commit()
+                logger.info("Admin user created successfully")
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
         # logger.info(
         #     'Соединение с базой' + f"{Fore.GREEN}{Style.DIM}{str(db_test_connect)}" if
@@ -76,10 +88,10 @@ async def main():
 
     if app_settings.is_polling:
         logger.info("Режим pollong")
+        dp.startup.register(on_startup)
+        dp.shutdown.register(on_shutdown)
         await bot(DeleteWebhook(drop_pending_updates=True))
-        await dp.start_polling(
-            bot, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown
-        )
+        await dp.start_polling(bot, skip_updates=True)
     # else:
     #     logger.warning("Режим webhook")
     #     dp.startup.register(on_startup)
