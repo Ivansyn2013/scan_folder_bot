@@ -4,7 +4,25 @@ from models.repositories import UserRepository
 from models.sessions import db_manager
 
 
-async def users_kb(page: int = 0, items_per_page: int = 5):
+async def admin_kb():
+
+    builder = InlineKeyboardBuilder()
+
+    # Добавляем кнопки с файлами
+
+    # Добавляем кнопку отмены
+    builder.button(text="Пользователи staff", callback_data="show_staff")
+    builder.button(text="Пользователи admin", callback_data="show_admin")
+    builder.button(text="Пользователи not_reg", callback_data="show_NOT_REGISTER")
+    builder.button(text="❌ Отмена", callback_data="cancel")
+
+    # Настраиваем расположение: все кнопки по одной в ряд
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+
+async def users_kb(role_grop, page: int = 0, items_per_page: int = 5):
     """
     Generates an inline keyboard with user data and navigation buttons based on the
     provided pagination parameters.
@@ -23,7 +41,7 @@ async def users_kb(page: int = 0, items_per_page: int = 5):
     """
     session = db_manager.get_session()
     user_repo = UserRepository(session)
-    users = user_repo.get_all()
+    users = user_repo.get_by_role_group(role_grop)
 
     # Расчет пагинации
     total_pages = (len(users) + items_per_page - 1) // items_per_page

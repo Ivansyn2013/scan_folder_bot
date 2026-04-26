@@ -103,6 +103,13 @@ This project uses [Ruff](https://github.com/astral-sh/ruff) for linting and form
   ```bash
   ruff format .
   ```
+- **Git**
+```aiignore
+git ls-files --others
+```
+```aiignore
+git ls-files --others --exclude-standard
+```
 
 ## Project Structure
 

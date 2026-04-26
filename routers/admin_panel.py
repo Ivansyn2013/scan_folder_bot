@@ -4,7 +4,7 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy.orm import Session
 
 from caches.caches import FilesCache, UserCache
-from keyboards.admin_kb import user_mod_kb, users_kb
+from keyboards.admin_kb import user_mod_kb, users_kb, admin_kb
 from models.repositories import UserRepository, UserRequestRepository
 from models.users import UserRole
 
@@ -44,7 +44,40 @@ async def admin(
         text=f"Привет! {message.from_user.first_name}! "
         f"Сегодня пользователей: {len(user_repo.get_all())}"
         f"👋",
-        reply_markup=await users_kb(),
+        reply_markup=await admin_kb(),
+    )
+
+
+@admin_router.callback_query(F.data.startswith("show_"))
+async def admin_user_show_callback(
+    callback: CallbackQuery,
+    db_session: Session,
+    bot: Bot,
+    user_repo: UserRepository,
+    request_repo: UserRequestRepository,
+    file_cache: FilesCache,
+    user_cache: UserCache,
+):
+    user_id = callback.from_user.id
+    user = user_repo.get_by_telegram_id(user_id)
+
+    if user is None or user.admin is False:
+        await callback.message.answer(
+            f"Привет, {callback.from_user.first_name}! 👋\n"
+            f"Вы не зарегистрированы в системе \n"
+            f"О Ваших действия будет доложено администратору"
+        )
+        admins = user_repo.get_admins()
+        await bot.send_message(
+            chat_id=admins[0].telegram_id,
+            text=f"Пользователь {callback.from_user.first_name} {callback.from_user.last_name} ({callback.from_user.username}) не зарегистрирован в системе",
+        )
+        return
+
+    data = callback.data.split("show_")[1]
+
+    await callback.message.answer(
+        text=f"Действия с пользвателями {data}", reply_markup=await users_kb(data)
     )
 
 
