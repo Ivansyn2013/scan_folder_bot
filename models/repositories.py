@@ -1,11 +1,12 @@
 # database/repositories.py
-from sqlalchemy.orm import Session
-from sqlalchemy import select, update, delete
-from typing import Optional, List, Dict, Any
 from abc import ABC, abstractmethod
-from models.users import CustomUser, UserRequest
+from typing import Any, Dict, List, Optional
+
 from loguru import logger
-from models.users import UserRole
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
+
+from models.users import CustomUser, UserRequest, UserRole
 
 
 class AbstractRepository(ABC):
@@ -56,8 +57,8 @@ class BaseRepository(AbstractRepository):
         stmt = select(self.model).offset(skip).limit(limit + 1)
         result = list(self.session.execute(stmt).scalars().all())
         if len(result) > limit:
-            logger.error(f"Instanses are more that limin <{limit}>")
-        return list(self.session.execute(stmt).scalars().all())
+            logger.error(f"Instances are more that limit <{limit}>")
+        return result
 
     def update(self, id: int, data: Dict[str, Any]) -> Optional[Any]:
         entity = self.get(id)
@@ -110,6 +111,15 @@ class UserRepository(BaseRepository):
     def get_not_register(self) -> List[CustomUser]:
         stmt = select(self.model).where(self.model.role_group == UserRole.NOT_REGISTER)
         return list(self.session.execute(stmt).scalars().all())
+
+    # def get_users_today(self):
+    #     stmt = (select(self.model)
+    #     .where(
+    #         self.model. == UserRole.NOT_REGISTER))
+    #     return list(self.session.execute(stmt).scalars().all())
+    #
+    # def get_requests_today(self):
+    #     pass
 
 
 class UserRequestRepository(BaseRepository):

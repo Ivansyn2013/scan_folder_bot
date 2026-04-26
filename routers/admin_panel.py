@@ -1,16 +1,15 @@
-from aiogram import Router
-from aiogram.filters import CommandStart, Command
-from aiogram.types import Message
-from loguru import logger
+from aiogram import Bot, F, Router
+from aiogram.filters import Command
+from aiogram.types import CallbackQuery, Message
 from sqlalchemy.orm import Session
-from models.repositories import UserRepository, UserRequestRepository
+
 from caches.caches import FilesCache, UserCache
-from actions.scan_folder import scan_folder
-from keyboards.files_kb import found_files_kb
-from .scan_folder import check_user
-from aiogram import Bot
+from keyboards.admin_kb import user_mod_kb, users_kb
+from models.repositories import UserRepository, UserRequestRepository
+from models.users import UserRole
 
 # Создаем роутер для этого модуля
+
 admin_router = Router(name="admin_router")
 
 
@@ -26,32 +25,90 @@ async def admin(
 ):
     """Обработчик команды /admin"""
     user_id = message.from_user.id
-    user = await user_repo.get_user_by_id(user_id=user_id)
+    user = user_repo.get_by_telegram_id(user_id)
+
     if user is None or user.admin is False:
         await message.answer(
             f"Привет, {message.from_user.first_name}! 👋\n"
             f"Вы не зарегистрированы в системе \n"
             f"О Ваших действия будет доложено администратору"
         )
-        admins = await user_repo.get_admins()
+        admins = user_repo.get_admins()
         await bot.send_message(
-            user_id=admins[0].telegram_id,
+            chat_id=admins[0].telegram_id,
             text=f"Пользователь {message.from_user.first_name} {message.from_user.last_name} ({message.from_user.username}) не зарегистрирован в системе",
         )
         return
 
     await message.answer(
-        f"Привет! {message.from_user.first_name}! "
+        text=f"Привет! {message.from_user.first_name}! "
         f"Сегодня пользователей: {len(user_repo.get_all())}"
-        f"👋"
+        f"👋",
+        reply_markup=await users_kb(),
     )
 
 
-@admin_router.message(Command("files"))
-async def cmd_start(message: Message):
-    """Обработчик команды /start"""
-    files = await scan_folder(target="для")
-    keyboard = await found_files_kb(message=message, files=files)
-    await message.answer(
-        f"Привет, {message.from_user.first_name}! 👋\nФайлы\т", reply_markup=keyboard
+@admin_router.callback_query(F.data.startswith("user_mod_do_staff"))
+async def admin_user_mod_staff_callback(
+    callback: CallbackQuery,
+    db_session: Session,
+    bot: Bot,
+    user_repo: UserRepository,
+    request_repo: UserRequestRepository,
+    file_cache: FilesCache,
+    user_cache: UserCache,
+):
+    user_id = callback.from_user.id
+    user = user_repo.get_by_telegram_id(user_id)
+
+    if user is None or user.admin is False:
+        await callback.message.answer(
+            f"Привет, {callback.from_user.first_name}! 👋\n"
+            f"Вы не зарегистрированы в системе \n"
+            f"О Ваших действия будет доложено администратору"
+        )
+        admins = user_repo.get_admins()
+        await bot.send_message(
+            chat_id=admins[0].telegram_id,
+            text=f"Пользователь {callback.from_user.first_name} {callback.from_user.last_name} ({callback.from_user.username}) не зарегистрирован в системе",
+        )
+        return
+
+    user_id = int(callback.data.split("user_mod_do_staff_")[1])
+    user = user_repo.get(user_id)
+    user_repo.update(user_id, {"role_group": UserRole.STAFF})
+    db_session.commit()
+    await callback.answer("Пользователь добавлен в staff")
+
+
+@admin_router.callback_query(F.data.startswith("user_"))
+async def admin_user_callback(
+    callback: CallbackQuery,
+    db_session: Session,
+    bot: Bot,
+    user_repo: UserRepository,
+    request_repo: UserRequestRepository,
+    file_cache: FilesCache,
+    user_cache: UserCache,
+):
+    user_id = callback.from_user.id
+    user = user_repo.get_by_telegram_id(user_id)
+
+    if user is None or user.admin is False:
+        await callback.message.answer(
+            f"Привет, {callback.from_user.first_name}! 👋\n"
+            f"Вы не зарегистрированы в системе \n"
+            f"О Ваших действия будет доложено администратору"
+        )
+        admins = user_repo.get_admins()
+        await bot.send_message(
+            chat_id=admins[0].telegram_id,
+            text=f"Пользователь {callback.from_user.first_name} {callback.from_user.last_name} ({callback.from_user.username}) не зарегистрирован в системе",
+        )
+        return
+
+    user_id = int(callback.data.split("user_")[1])
+    user = user_repo.get(user_id)
+    await callback.message.answer(
+        text="Действия с пользвоателем", reply_markup=await user_mod_kb(user)
     )

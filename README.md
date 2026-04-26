@@ -3,6 +3,7 @@
 Telegram bot for scanning folders and sending files (Excel files) to users with search and pagination features.
 
 ## Features
+
 - Scan directory for `.xlsx` files.
 - Search files by name.
 - Pagination for file list.
@@ -11,6 +12,7 @@ Telegram bot for scanning folders and sending files (Excel files) to users with 
 - Database migrations with Alembic.
 
 ## Prerequisites
+
 - Python 3.12+
 - Docker and Docker Compose (optional, for containerized deployment)
 - [uv](https://github.com/astral-sh/uv) (recommended for local development)
@@ -18,26 +20,35 @@ Telegram bot for scanning folders and sending files (Excel files) to users with 
 ## Setup and Installation
 
 ### 1. Configuration
+
 Copy the example environment file and fill in your credentials:
+
 ```bash
 cp .env.example .env
 ```
+
 Edit `.env` and set:
+
 - `TOKEN`: Your Telegram Bot Token.
 - `ADMIN_ID`: Your Telegram ID.
 - `TARGET_FOLDER`: Path to the folder you want to scan.
 
 ### 2. Using Docker (Recommended)
+
 The easiest way to start the project is using Docker Compose:
+
 ```bash
 docker-compose up -d --build
 ```
+
 This will:
+
 - Start a PostgreSQL database.
 - Run database migrations automatically.
 - Start the bot.
 
 ### 3. Local Installation
+
 If you prefer to run it locally:
 
 1. Install dependencies:
@@ -71,11 +82,30 @@ To manage database schema changes, use the following commands:
   ```
 
 ## Bot Commands
+
 - `/start` - Register or wake up the bot.
 - `/files` - Show available files (requires authorization).
 - Any text - Search for files by name.
 
+## Development
+
+This project uses [Ruff](https://github.com/astral-sh/ruff) for linting and formatting.
+
+- **Check for linting errors:**
+  ```bash
+  ruff check .
+  ```
+- **Fix fixable linting errors:**
+  ```bash
+  ruff check . --fix
+  ```
+- **Format code:**
+  ```bash
+  ruff format .
+  ```
+
 ## Project Structure
+
 - `actions/` - Core logic for scanning folders.
 - `models/` - SQLAlchemy models and repositories.
 - `routers/` - Telegram handlers (aiogram).

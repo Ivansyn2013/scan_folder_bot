@@ -1,8 +1,7 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from pathlib import Path
-from typing import List
-from caches.caches import FilesCache
 from loguru import logger
+
+from caches.caches import FilesCache
 
 
 async def found_files_kb(

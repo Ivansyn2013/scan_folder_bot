@@ -1,19 +1,19 @@
 import asyncio
-from loguru import logger
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
-from aiogram import Bot, Dispatcher
-from aiogram.methods import DeleteWebhook
-from aiogram.client.session.aiohttp import AiohttpSession
-
-from models.repositories import UserRepository
-from models.users import CustomUser
-from settings.settings import app_settings
-from routers.scan_folder import start_router
 import sys
+
+from aiogram import Bot, Dispatcher
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.methods import DeleteWebhook
+from loguru import logger
+
+from caches import file_cache, user_cache
 from middleware.db_middleware import DatabaseMiddleware
-from caches import user_cache, file_cache
-from models.users import UserRole
+from models.repositories import UserRepository
+from models.users import CustomUser, UserRole
+from routers.admin_panel import admin_router
+from routers.any_messages import any_mess_router
+from routers.scan_folder import start_router
+from settings.settings import app_settings
 
 logger.remove()
 # Добавляем свой обработчик с нужным уровнем логирования
@@ -37,7 +37,12 @@ async def main():
     # Dispatch handlers
     dp = Dispatcher()
 
+    # ROUTERS
     dp.include_router(start_router)
+    dp.include_router(admin_router)
+    dp.include_router(any_mess_router)
+
+    # MIDDLEWARE
     dp.update.middleware(DatabaseMiddleware())
 
     async def on_startup():
@@ -63,7 +68,9 @@ async def main():
                 )
                 user_repo.add(admin)
                 session.commit()
-                logger.info("Admin user created successfully")
+                logger.info(
+                    f"Admin user created successfully t_id :{app_settings.admin_id}"
+                )
         except Exception:
             session.rollback()
             raise

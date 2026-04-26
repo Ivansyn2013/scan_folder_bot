@@ -1,18 +1,21 @@
 # database/models.py
+from datetime import datetime
+from enum import Enum
+
+import pytz
 from sqlalchemy import (
+    BigInteger,
+    Boolean,
     Column,
+    DateTime,
+    ForeignKey,
     Integer,
     String,
-    Boolean,
-    DateTime,
-    BigInteger,
-    ForeignKey,
+)
+from sqlalchemy import (
     Enum as SqlEnum,
 )
 from sqlalchemy.orm import declarative_base
-from datetime import datetime
-import pytz
-from enum import Enum
 
 Base = declarative_base()
 

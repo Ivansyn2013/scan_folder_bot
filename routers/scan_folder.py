@@ -1,11 +1,10 @@
-from aiogram import Router, Bot, F
-from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram import Bot, F, Router
+from aiogram.filters import Command, CommandStart
+from aiogram.types import CallbackQuery, FSInputFile, Message
 from loguru import logger
 from sqlalchemy.orm import Session
 
-from actions.scan_folder import scan_folder
-from caches.caches import UserCache, FilesCache
+from caches.caches import FilesCache, UserCache
 from keyboards.files_kb import found_files_kb
 from models.repositories import UserRepository, UserRequestRepository
 from models.users import CustomUser, UserRole
@@ -83,8 +82,10 @@ async def cmd_start(
     """Обработчик команды /start"""
     # Admin
     admin_welcome = ""
-    admin = user_repo.get_by_telegram_id(message.from_user.id)
-    if admin:
+
+    user = message.from_user.id
+    admin_ids = [user.telegram_id for user in user_cache.admin.get_ids()]
+    if user in admin_ids:
         admin_welcome = "Внимание, пользователь распознан как администратор"
     logger.debug(
         f"Message from user {message.from_user.first_name} "
@@ -93,10 +94,12 @@ async def cmd_start(
     )
     # User
     user = message.from_user
-    check = check_user(user.id, user_cache.cache)
+    users_ids = [user.telegram_id for user in user_cache.cache]
+    check = user.id in users_ids
     if not check:
         await user_cache.update()
-        new_check = check_user(user.id, user_cache.cache)
+        users_ids = [user.telegram_id for user in user_cache.cache]
+        new_check = user.id in users_ids
         if not new_check:
             logger.warning(
                 f"User {user.id, user.first_name} no register. Send "
@@ -109,11 +112,10 @@ async def cmd_start(
             )
             user_repo.add(new_user)
             await user_cache.update()
-        return
 
     await message.answer(
-        f"Привет, {message.from_user.first_name}! 👋\nЯ бот. Я работаю\n"
-        + admin_welcome
+        f"Привет, {message.from_user.first_name}! 👋\nЯ бот. Для  работы "
+        f"обатитесь к администратору!\n" + admin_welcome
     )
 
 
@@ -129,55 +131,20 @@ async def files(
 ):
     """Обработчик команды /files"""
 
-    users_ids = [user.telegram_id for sublist in user_cache.cache for user in sublist]
-    authorization = await check_user(message.from_user.id, users_ids)
+    users_ids = [user.telegram_id for user in user_cache.cache]
+    authorization = message.from_user.id in users_ids
 
     if not authorization:
         await message.answer("У вас нет прав доступа")
-        admin = user_repo.get_admins()
+        admins = user_repo.get_admins()
         await bot.send_message(
-            chat_id=admin[0].telegram_id,
+            chat_id=admins[0].telegram_id,
             text=f"User has no access {message.from_user.id, message.from_user.first_name}"
             f"{message.text[:30]}",
         )
         return
 
     # files = await scan_folder(target="для")
-    keyboard = await found_files_kb(
-        message=message, file_cache=file_cache, target=message.text[:10]
-    )
-    await message.answer(
-        f"Привет, {message.from_user.first_name}! 👋\nФайлы\n", reply_markup=keyboard
-    )
-
-
-@start_router.message()
-async def any_message(
-    message: Message,
-    bot: Bot,
-    db_session: Session,
-    user_repo: UserRepository,
-    request_repo: UserRequestRepository,
-    file_cache,
-    user_cache,
-):
-    """Любых сообщений"""
-    if len(message.text) > 15:
-        await message.answer("Соббщение не прошло фильтрацию")
-        return
-
-    users_ids = [user.telegram_id for sublist in user_cache.cache for user in sublist]
-    authorization = await check_user(message.from_user.id, users_ids)
-
-    if not authorization:
-        await message.answer("У вас нет прав доступа")
-        await bot.send_message(
-            f"User has no access {message.from_user.id, message.from_user.first_name}"
-            f"{message.text[:30]}"
-        )
-        return
-
-        # files = await scan_folder(target="для")
     keyboard = await found_files_kb(
         message=message, file_cache=file_cache, target=message.text[:10]
     )

@@ -1,21 +1,28 @@
 # migrations/env.py
 import sys
-from pathlib import Path
+
 from settings.settings import app_settings
 
 # Добавляем путь к вашему проекту (если нужно)
 sys.path.append(str(app_settings.base_dir))
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # Импортируем вашу базу и модели
-from models.users import Base  # Или откуда у вас импортируется Base
-from models.users import CustomUser, UserRequest  # Ваши модели
+from models.users import (  # Ваши модели
+    Base,  # Или откуда у вас импортируется Base
+)
 
 # Это самое важное! Указываем Alembic метаданные ваших моделей
 target_metadata = Base.metadata
+
+# Получаем конфиг и запускаем нужную функцию
+config = context.config
+
+# Переопределяем URL из настроек приложения
+if app_settings.database_url:
+    config.set_main_option("sqlalchemy.url", app_settings.database_url)
 
 
 def run_migrations_offline() -> None:
@@ -56,8 +63,6 @@ def run_migrations_online() -> None:
             context.run_migrations()
 
 
-# Получаем конфиг и запускаем нужную функцию
-config = context.config
 if context.is_offline_mode():
     run_migrations_offline()
 else:

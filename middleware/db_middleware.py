@@ -1,12 +1,14 @@
 # middlewares/db_middleware.py
 from typing import Any, Awaitable, Callable, Dict
+
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject
+from aiogram.types import Message, TelegramObject
 from sqlalchemy.orm import Session
 
-from models.sessions import db_manager
+from caches import file_cache, user_cache
 from models.repositories import UserRepository, UserRequestRepository
-from caches import user_cache, file_cache
+from models.sessions import db_manager
+from models.users import CustomUser, UserRequest
 
 
 class DatabaseMiddleware(BaseMiddleware):
@@ -28,6 +30,38 @@ class DatabaseMiddleware(BaseMiddleware):
             data["request_repo"] = UserRequestRepository(session)
             data["file_cache"] = file_cache
             data["user_cache"] = user_cache
+
+            #
+            if isinstance(event, Message):
+                user_t_id = event.from_user.id
+                admin_ids = user_cache.admin.get_ids()
+                staff_ids = user_cache.staff.get_ids()
+                not_register_ids = user_cache.not_register.get_ids()
+                user_ids = admin_ids + staff_ids + not_register_ids
+
+                if user_t_id not in user_ids:
+                    user_session: Session = db_manager.get_session()
+                    new_user_repo = UserRepository(user_session)
+                    new_user = CustomUser(
+                        name=event.from_user.first_name,
+                        telegram_id=event.from_user.id,
+                    )
+                    new_user_repo.add(new_user)
+                    user_session.commit()
+
+                    data["user_cache"].update()
+
+                if event.text:
+                    new_req_session: Session = db_manager.get_session()
+                    new_req_repo = UserRequestRepository(new_req_session)
+                    new_req = new_req_repo.add(
+                        UserRequest(
+                            user_id=user_cache.get_user_by_telegram_id(user_t_id),
+                            text=event.text,
+                            date=event.date,
+                        )
+                    )
+                    new_req_session.commit()
 
             # Выполняем хендлер
             result = await handler(event, data)

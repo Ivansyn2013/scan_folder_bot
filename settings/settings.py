@@ -1,8 +1,9 @@
-from pydantic import BaseModel, Field, validator, ValidationError
-from typing import List, Dict, Optional, Union
 import os
 from pathlib import Path
+from typing import Dict, List, Optional, Union
+
 from loguru import logger
+from pydantic import BaseModel, Field, ValidationError, validator
 
 
 class DatabaseSettings(BaseModel):

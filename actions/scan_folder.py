@@ -1,8 +1,10 @@
-from settings.settings import app_settings
-from pathlib import Path
-from loguru import logger
 from collections import namedtuple
+from pathlib import Path
 from uuid import uuid4
+
+from loguru import logger
+
+from settings.settings import app_settings
 
 
 async def scan_folder_cache(folder: Path = app_settings.target_folder) -> list:

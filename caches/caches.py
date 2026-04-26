@@ -1,8 +1,10 @@
 from datetime import datetime
-from actions.scan_folder import scan_folder_cache
+from typing import Any, List, NamedTuple, Optional
+
 import pytz
 from loguru import logger
-from typing import Optional, List, Any, NamedTuple
+
+from actions.scan_folder import scan_folder_cache
 from models.repositories import UserRepository
 from models.sessions import db_manager as db
 
@@ -40,16 +42,66 @@ class BaseCache:
 class UserCache(BaseCache):
     """
     Class for use user cache
+    self.cache =
     """
+
+    class UserManager:
+        """
+        Manages user-related operations and data, specifically handling a user cache and
+        providing methods to extract user information. The class relies on input data
+        being structured in a way that it includes a `telegram_id` for each user.
+
+        :ivar cache: Stores user-related data, which is a list of user objects with a
+                     `telegram_id` attribute.
+        :type cache: list
+        """
+
+        def __init__(self, cache):
+            self.cache = cache
+
+        def get_ids(self):
+            if not self.cache or self.cache == []:
+                logger.warning("User cache is empty")
+                return []
+            return [user.telegram_id for user in self.cache]
+
+        def get_user_by_telegram_id(self, telegram_id):
+            return next(
+                (user.id for user in self.cache if user.telegram_id == telegram_id),
+                None,
+            )
+
+    def __init__(self):
+        super().__init__()
+        self.staff: UserCache.UserManager = None
+        self.admin: UserCache.UserManager = None
+        self.not_register: UserCache.UserManager = None
 
     async def update(self):
         session = db.get_session()
         user_repo = UserRepository(session)
 
-        self.cache = user_repo.get_staff()
-        self.cache.append(user_repo.get_admins())
+        self.staff = self.UserManager(user_repo.get_staff())
+        self.admin = self.UserManager(user_repo.get_admins())
+        self.not_register = self.UserManager(user_repo.get_not_register())
+        self.cache = self.staff.cache + self.admin.cache + self.not_register.cache
         self.last_update = datetime.now(pytz.timezone("Europe/Moscow"))
-        return self.cache
+        return True
+
+    def get_user_by_telegram_id(self, telegram_id):
+        """
+
+        :param telegram_id:
+        :return:User.id from CustomUser
+        """
+        if not self.cache or self.cache == []:
+            logger.warning("User cache is empty")
+            return []
+        return (
+            self.staff.get_user_by_telegram_id(telegram_id)
+            or self.admin.get_user_by_telegram_id(telegram_id)
+            or self.not_register.get_user_by_telegram_id(telegram_id)
+        )
 
     def __repr__(self) -> str:
         return f"UserCache(files={len(self.cache) if self.cache else 0}, last_update={self.last_update})"
