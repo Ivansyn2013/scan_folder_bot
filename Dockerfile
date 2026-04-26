@@ -37,4 +37,4 @@ RUN addgroup --system app && adduser --system --group app && \
 USER app
 
 # Команда для запуска бота
-CMD ["python", "main.py"]
+CMD ["alembic", "upgrade", "head"]
