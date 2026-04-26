@@ -83,6 +83,11 @@ class UserRepository(BaseRepository):
         super().__init__(session, CustomUser)
         self.model = CustomUser
 
+    def get_by_role_group(self, role_group: str):
+        target = UserRole(role_group)
+        stmt = select(self.model).where(self.model.role_group == target.value)
+        return list(self.session.execute(stmt).scalars().all())
+
     def get_by_telegram_id(self, telegram_id: int) -> Optional[CustomUser]:
         stmt = select(self.model).where(self.model.telegram_id == telegram_id)
         return self.session.execute(stmt).scalar_one_or_none()
