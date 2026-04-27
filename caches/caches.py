@@ -98,12 +98,13 @@ class UserCache(BaseCache):
         """
         if not self.cache or self.cache == []:
             logger.warning("User cache is empty")
-            return []
-        return (
+            return None
+        result =  (
             self.staff.get_user_by_telegram_id(telegram_id)
             or self.admin.get_user_by_telegram_id(telegram_id)
             or self.not_register.get_user_by_telegram_id(telegram_id)
         )
+        return result
 
     def __repr__(self) -> str:
         return f"UserCache(files={len(self.cache) if self.cache else 0}, last_update={self.last_update})"

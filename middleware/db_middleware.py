@@ -57,6 +57,7 @@ class DatabaseMiddleware(BaseMiddleware):
                 if event.text:
                     new_req_session: Session = db_manager.get_session()
                     new_req_repo = UserRequestRepository(new_req_session)
+                    logger.debug(f"user_cache.get_user_by_telegram_id(user_t_id) :: {user_cache.get_user_by_telegram_id(user_t_id)}")
                     new_req = new_req_repo.add(
                         UserRequest(
                             user_id=user_cache.get_user_by_telegram_id(user_t_id),
