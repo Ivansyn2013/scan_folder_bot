@@ -88,6 +88,7 @@ class UserCache(BaseCache):
         self.allowed = self.staff.cache + self.admin.cache
         self.cache = self.staff.cache + self.admin.cache + self.not_register.cache
         self.last_update = datetime.now(pytz.timezone("Europe/Moscow"))
+        logger.info(f"UserCache updated {self}")
         return self
 
     def get_user_by_telegram_id(self, telegram_id):

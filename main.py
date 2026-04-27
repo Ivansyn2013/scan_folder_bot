@@ -70,6 +70,7 @@ async def main():
                 )
                 user_repo.add(admin)
                 session.commit()
+                await user_cache.update()
                 logger.info(
                     f"Admin user created successfully t_id :{app_settings.admin_id}"
                 )
