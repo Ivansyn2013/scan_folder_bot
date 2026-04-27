@@ -54,7 +54,13 @@ async def any_message(
     logger.info(
         f"User {user.first_name} прошел авторизацию, запросил файлы по сообщению {message.text[:10]}"
     )
-    # await message.answer(
-    #     f"{message.from_user.first_name}! 👋\nНайдены Файлы\n",
-    #     reply_markup=keyboard,
-    # )
+    if not keyboard:
+        await message.answer(
+            f"{message.from_user.first_name}! \nФайлы не найдены\n",
+        )
+        return
+
+    await message.answer(
+        f"{message.from_user.first_name}! 👋\nНайдены Файлы\n",
+        reply_markup=keyboard,
+    )

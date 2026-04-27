@@ -88,7 +88,7 @@ class UserCache(BaseCache):
         self.allowed = self.staff.cache + self.admin.cache
         self.cache = self.staff.cache + self.admin.cache + self.not_register.cache
         self.last_update = datetime.now(pytz.timezone("Europe/Moscow"))
-        return True
+        return self
 
     def get_user_by_telegram_id(self, telegram_id):
         """
@@ -107,7 +107,7 @@ class UserCache(BaseCache):
         return result
 
     def __repr__(self) -> str:
-        return f"UserCache(files={len(self.cache) if self.cache else 0}, last_update={self.last_update})"
+        return f"UserCache(users={len(self.cache) if self.cache else 0}, last_update={self.last_update})"
 
 
 class FilesCache(BaseCache):

@@ -52,7 +52,7 @@ class DatabaseMiddleware(BaseMiddleware):
                         f"User <{new_user.name}> успешно добавлен в базу с ролью <{new_user.role_group}>"
                     )
 
-                    data["user_cache"].update()
+                    await data["user_cache"].update()
 
                 if event.text:
                     new_req_session: Session = db_manager.get_session()
