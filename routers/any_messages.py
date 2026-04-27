@@ -28,12 +28,15 @@ async def any_message(
         await message.answer("Сообщение не прошло фильтрацию")
         return
 
-    users_ids = [user.telegram_id for user in user_cache.cache]
-    authorization = message.from_user.id in users_ids
+    user = message.from_user
+    users_ids = [user.telegram_id for user in user_cache.allowed]
+    authorization = user.id in users_ids
 
     logger.debug(
         f"Message from user {message.from_user.id, message.from_user.first_name}"
     )
+    logger.debug(f"User <{user.id}> Authorization : {authorization}")
+
     if not authorization:
         await message.answer("У вас нет прав доступа")
         admins = user_repo.get_admins()
@@ -48,7 +51,10 @@ async def any_message(
     keyboard = await found_files_kb(
         message=message, file_cache=file_cache, target=message.text[:10]
     )
-    await message.answer(
-        f"Привет Anymess handleer, {message.from_user.first_name}! 👋\nФайлы\n",
-        reply_markup=keyboard,
+    logger.info(
+        f"User {user.first_name} прошел авторизацию, запросил файлы по сообщению {message.text[:10]}"
     )
+    # await message.answer(
+    #     f"{message.from_user.first_name}! 👋\nНайдены Файлы\n",
+    #     reply_markup=keyboard,
+    # )

@@ -76,6 +76,7 @@ class UserCache(BaseCache):
         self.staff: UserCache.UserManager = None
         self.admin: UserCache.UserManager = None
         self.not_register: UserCache.UserManager = None
+        self.allowed: UserCache.UserManager = None
 
     async def update(self):
         session = db.get_session()
@@ -84,6 +85,7 @@ class UserCache(BaseCache):
         self.staff = self.UserManager(user_repo.get_staff())
         self.admin = self.UserManager(user_repo.get_admins())
         self.not_register = self.UserManager(user_repo.get_not_register())
+        self.allowed = self.staff.cache + self.admin.cache
         self.cache = self.staff.cache + self.admin.cache + self.not_register.cache
         self.last_update = datetime.now(pytz.timezone("Europe/Moscow"))
         return True

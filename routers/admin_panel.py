@@ -81,7 +81,7 @@ async def admin_user_show_callback(
     )
 
 
-@admin_router.callback_query(F.data.startswith("user_mod_do_staff"))
+@admin_router.callback_query(F.data.startswith("user_mod_"))
 async def admin_user_mod_staff_callback(
     callback: CallbackQuery,
     db_session: Session,
@@ -107,11 +107,19 @@ async def admin_user_mod_staff_callback(
         )
         return
 
-    user_id = int(callback.data.split("user_mod_do_staff_")[1])
-    user = user_repo.get(user_id)
-    user_repo.update(user_id, {"role_group": UserRole.STAFF})
-    db_session.commit()
-    await callback.answer("Пользователь добавлен в staff")
+    data = callback.data.split("user_mod_")[1]
+
+    if data.startswith("do_staff"):
+        user_id = int(callback.data.split("user_mod_do_staff_")[1])
+        user_repo.update(user_id, {"role_group": UserRole.STAFF})
+        db_session.commit()
+        await callback.answer("Пользователь добавлен в staff")
+    elif data.startswith("del_staff"):
+        user_id = int(callback.data.split("user_mod_del_staff_")[1])
+        user_repo.update(user_id, {"role_group": UserRole.NOT_REGISTER})
+        db_session.commit()
+        await callback.answer("Пользователь удален из staff")
+    await user_cache.update()
 
 
 @admin_router.callback_query(F.data.startswith("user_"))

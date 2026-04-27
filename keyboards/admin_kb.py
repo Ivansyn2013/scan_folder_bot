@@ -80,7 +80,9 @@ async def user_mod_kb(user):
     builder.button(
         text="Добавить в пользователя️", callback_data=f"user_mod_do_staff_{user.id}"
     )
-
+    builder.button(
+        text="Удалить пользователя️", callback_data=f"user_mod_del_staff_{user.id}"
+    )
     # Добавляем кнопку отмены
     builder.button(text="❌ Отмена", callback_data="cancel")
 

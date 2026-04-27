@@ -43,7 +43,9 @@ async def main():
     dp.include_router(any_mess_router)
 
     # MIDDLEWARE
-    dp.update.middleware(DatabaseMiddleware())
+    # dp.update.middleware(DatabaseMiddleware())
+    dp.message.middleware(DatabaseMiddleware())
+    dp.callback_query.middleware(DatabaseMiddleware())
 
     async def on_startup():
         from models.sessions import db_manager

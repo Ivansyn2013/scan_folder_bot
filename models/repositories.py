@@ -67,6 +67,7 @@ class BaseRepository(AbstractRepository):
                 if hasattr(entity, key):
                     setattr(entity, key, value)
             self.session.flush()
+        logger.info(f"User {entity} was updated {data}")
         return entity
 
     def delete(self, id: int) -> bool:

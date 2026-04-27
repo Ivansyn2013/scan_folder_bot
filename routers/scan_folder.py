@@ -84,7 +84,7 @@ async def cmd_start(
     admin_welcome = ""
 
     user = message.from_user.id
-    admin_ids = [user.telegram_id for user in user_cache.admin]
+    admin_ids = [user_id for user_id in user_cache.admin.get_ids()]
     if user in admin_ids:
         admin_welcome = "Внимание, пользователь распознан как администратор"
     logger.debug(
@@ -94,11 +94,11 @@ async def cmd_start(
     )
     # User
     user = message.from_user
-    users_ids = [user.telegram_id for user in user_cache.cache]
+    users_ids = [user_d.telegram_id for user_d in user_cache.cache]
     check = user.id in users_ids
     if not check:
         await user_cache.update()
-        users_ids = [user.telegram_id for user in user_cache.cache]
+        users_ids = [user_id.telegram_id for user_id in user_cache.cache]
         new_check = user.id in users_ids
         if not new_check:
             logger.warning(
@@ -131,7 +131,7 @@ async def files(
 ):
     """Обработчик команды /files"""
 
-    users_ids = [user.telegram_id for user in user_cache.cache]
+    users_ids = [user_id for user_id in user_cache.cache]
     authorization = message.from_user.id in users_ids
 
     if not authorization:

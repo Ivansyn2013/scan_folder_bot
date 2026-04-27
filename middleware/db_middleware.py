@@ -4,7 +4,7 @@ from typing import Any, Awaitable, Callable, Dict
 from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
 from sqlalchemy.orm import Session
-
+from loguru import logger
 from caches import file_cache, user_cache
 from models.repositories import UserRepository, UserRequestRepository
 from models.sessions import db_manager
@@ -48,6 +48,9 @@ class DatabaseMiddleware(BaseMiddleware):
                     )
                     new_user_repo.add(new_user)
                     user_session.commit()
+                    logger.info(
+                        f"User <{new_user.name}> успешно добавлен в базу с ролью <{new_user.role_group}>"
+                    )
 
                     data["user_cache"].update()
 
@@ -58,7 +61,6 @@ class DatabaseMiddleware(BaseMiddleware):
                         UserRequest(
                             user_id=user_cache.get_user_by_telegram_id(user_t_id),
                             text=event.text,
-                            date=event.date,
                         )
                     )
                     new_req_session.commit()
