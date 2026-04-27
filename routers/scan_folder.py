@@ -84,7 +84,7 @@ async def cmd_start(
     admin_welcome = ""
 
     user = message.from_user.id
-    admin_ids = [user.telegram_id for user in user_cache.admin.get_ids()]
+    admin_ids = [user.telegram_id for user in user_cache.admin]
     if user in admin_ids:
         admin_welcome = "Внимание, пользователь распознан как администратор"
     logger.debug(

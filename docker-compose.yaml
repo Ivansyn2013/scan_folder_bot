@@ -1,13 +1,16 @@
-version: "3.9"
-
 services:
    bot:
-    build: .
+    build: 
+      context: .
+      args:
+        UID: 1000
+        GID: 1002
     container_name: bot_app
     env_file:
       - .env
+    user: "1000:1002"
     volumes:
-      - ${TARGET_FOLDER}:${TARGET_FOLDER}:ro
+      - ${MOUNT_FOLDER}:${TARGET_FOLDER}:ro
       - bot_data:/app/tmp
     command: >
       sh -c "alembic upgrade head && python main.py"
